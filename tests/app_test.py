@@ -50,6 +50,33 @@ def test_empty_db(client):
     assert b"No entries yet. Add some!" in rv.data
 
 
+def test_login_required(client):
+    """Test that the login_required decorator works"""
+    # Attempt to delete a post without being logged in
+    rv = client.get('/delete/1')
+    assert rv.status_code == 401
+    data = json.loads(rv.data)
+    assert data["status"] == 0
+    assert data["message"] == "Please log in."
+
+    # Log in
+    login(client, app.config["USERNAME"], app.config["PASSWORD"])
+
+    # Create a post
+    client.post(
+        "/add",
+        data=dict(title="Test Post", text="This is a test post."),
+        follow_redirects=True,
+    )
+
+    # Now try to delete the post while logged in
+    rv = client.get('/delete/1')
+    assert rv.status_code == 200
+    data = json.loads(rv.data)
+    assert data["status"] == 1
+    assert data["message"] == "Post Deleted"
+
+
 def test_login_logout(client):
     """Test login and logout using helper functions"""
     rv = login(client, app.config["USERNAME"], app.config["PASSWORD"])
@@ -76,6 +103,10 @@ def test_messages(client):
 
 def test_delete_message(client):
     """Ensure the messages are being deleted"""
-    rv = client.get('/delete/1')
+    rv = client.get("/delete/1")
+    data = json.loads(rv.data)
+    assert data["status"] == 0
+    login(client, app.config["USERNAME"], app.config["PASSWORD"])
+    rv = client.get("/delete/1")
     data = json.loads(rv.data)
     assert data["status"] == 1
