@@ -3,6 +3,7 @@ from pathlib import Path
 
 from project.app import app, db
 import json
+
 TEST_DB = "test.db"
 
 
@@ -53,7 +54,7 @@ def test_empty_db(client):
 def test_login_required(client):
     """Test that the login_required decorator works"""
     # Attempt to delete a post without being logged in
-    rv = client.get('/delete/1')
+    rv = client.get("/delete/1")
     assert rv.status_code == 401
     data = json.loads(rv.data)
     assert data["status"] == 0
@@ -70,7 +71,7 @@ def test_login_required(client):
     )
 
     # Now try to delete the post while logged in
-    rv = client.get('/delete/1')
+    rv = client.get("/delete/1")
     assert rv.status_code == 200
     data = json.loads(rv.data)
     assert data["status"] == 1
@@ -100,6 +101,7 @@ def test_messages(client):
     assert b"No entries here so far" not in rv.data
     assert b"&lt;Hello&gt;" in rv.data
     assert b"<strong>HTML</strong> allowed here" in rv.data
+
 
 def test_delete_message(client):
     """Ensure the messages are being deleted"""
