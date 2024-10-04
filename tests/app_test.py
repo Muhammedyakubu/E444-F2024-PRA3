@@ -112,3 +112,49 @@ def test_delete_message(client):
     rv = client.get("/delete/1")
     data = json.loads(rv.data)
     assert data["status"] == 1
+
+def test_search(client):
+    """Test the search functionality"""
+    # Login
+    login(client, app.config["USERNAME"], app.config["PASSWORD"])
+    
+    # Create some test posts
+    client.post(
+        "/add",
+        data=dict(title="First Post", text="This is the first test post."),
+        follow_redirects=True,
+    )
+    client.post(
+        "/add",
+        data=dict(title="Second Post", text="This is the second test post."),
+        follow_redirects=True,
+    )
+
+    # Test search with a query that should return results
+    rv = client.get("/search/?query=first")
+    assert rv.status_code == 200
+    assert b"First Post" in rv.data
+    assert b"This is the first test post." in rv.data
+    assert b"Second Post" not in rv.data
+    
+    # Test search with a query that should return multiple results
+    rv = client.get("/search/?query=test")
+    assert rv.status_code == 200
+    assert b"First Post" in rv.data
+    assert b"Second Post" in rv.data
+
+    def assert_no_results(rv):
+        assert rv.status_code == 200
+        assert b"First Post" not in rv.data
+        assert b"Second Post" not in rv.data
+        assert b"This is the first test post." not in rv.data
+        assert b"This is the second test post." not in rv.data
+    
+    # Test search with a query that should return no results
+    rv = client.get("/search/?query=nonexistent")
+    assert_no_results(rv)
+            
+    # Test search without a query
+    rv = client.get("/search/")
+    assert rv.status_code == 200
+    assert_no_results(rv)
